@@ -7,28 +7,50 @@ import clockworks.robot.Robot;
 @TeleOp(name = "ClockworksTeleOP")
 public class ClockworksTeleOP extends OpMode {
     private Robot robot;
+    private boolean drivingToGlyph;
 
     @Override
     public void init() {
         robot = new Robot(hardwareMap);
+        drivingToGlyph = false;
     }
 
     @Override
     public void loop() {
-        telemetry.addData("Left Trigger", gamepad2.left_trigger);
-        telemetry.addData("Right Trigger", gamepad2.right_trigger);
-        robot.drive(gamepad1.left_stick_x, gamepad1.left_stick_y, gamepad1.right_stick_x);
+        if(drivingToGlyph) {
+            robot.driveToGlyphPosition();
+        } else {
+            robot.drive(gamepad1.left_stick_x, gamepad1.left_stick_y, gamepad1.right_stick_x);
+        }
+
         robot.intake(gamepad1.right_trigger - gamepad1.left_trigger);
 
-        robot.lift(.5 * gamepad2.right_stick_y);
-        robot.armExtender(gamepad2.right_trigger - gamepad2.left_trigger);
+        if(gamepad2.dpad_up) {
+            robot.lift(1.0);
+        } else if(gamepad2.dpad_down) {
+            robot.lift(-1.0);
+        } else {
+            robot.lift(0);
+        }
 
-        telemetry.addData("CRServo Left power: ", robot.armExtenderLeft.getPower());
-        telemetry.addData("CRServo Right power: ", robot.armExtenderRight.getPower());
+        if(gamepad2.dpad_right) {
+            robot.rotateClaw(-1.0);
+        } else if(gamepad2.dpad_left) {
+            robot.rotateClaw(1.0);
+        } else {
+            robot.rotateClaw(0);
+        }
 
-        robot.toggleClaw(gamepad2.a, getRuntime());
-        if(gamepad2.b) {
-            telemetry.addData("Claw Servo Position", robot.rightClaw.getPosition());
+        if(gamepad2.a) {
+            robot.closeClaw();
+        } else if(gamepad2.b) {
+            robot.openClaw();
+        }
+
+        if(gamepad1.a) {
+            robot.dropFoundationMovers();
+        } else if(gamepad1.b) {
+            robot.raiseFoundationMovers();
         }
     }
 }

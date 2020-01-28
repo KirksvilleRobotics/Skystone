@@ -1,34 +1,45 @@
 package clockworks.robot;
 
-import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.hardware.rev.Rev2mDistanceSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+
+import clockworks.util.Alliance;
+
+import static clockworks.util.InputUtils.*;
+
 public class Robot {
-
-    private static final int DELAY = 300;
-
     private DcMotor frontLeft;
     private DcMotor backLeft;
     private DcMotor frontRight;
     private DcMotor backRight;
 
-    private DcMotor lift;
-
     private DcMotor intakeLeft;
     private DcMotor intakeRight;
 
-    public CRServo armExtenderLeft;
-    public CRServo armExtenderRight;
+    private DcMotor lift;
+    private DcMotor clawRotator;
 
-    public Servo leftClaw;
-    public Servo rightClaw;
+    private Servo claw;
 
-    private boolean isClosed;
+    private Servo leftFoundationMover;
+    private Servo rightFoundationMover;
 
-    private double lastClawtime;
+    private Rev2mDistanceSensor leftDistanceSensor;
+    private Rev2mDistanceSensor rightDistanceSensor;
+    private Rev2mDistanceSensor backDistanceSensor;
+
+    private double leftGlyphDistance = 0.0;
+    private double rightGlyphDistance = 0.0;
+    private double backGlyphDistance = 0.0;
+    private double distanceTolerance = 0.5;
+
+    private Alliance alliance;
 
     public Robot(HardwareMap hardwareMap) {
         frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
@@ -36,76 +47,79 @@ public class Robot {
         frontRight = hardwareMap.get(DcMotor.class, "frontRight");
         backRight = hardwareMap.get(DcMotor.class, "backRight");
 
-        frontLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+        frontRight.setDirection(DcMotorSimple.Direction.REVERSE);
         backRight.setDirection(DcMotorSimple.Direction.REVERSE);
-
-        lift = hardwareMap.get(DcMotor.class, "lift");
-
-        lift.setDirection(DcMotorSimple.Direction.REVERSE);
 
         intakeLeft = hardwareMap.get(DcMotor.class, "intakeLeft");
         intakeRight = hardwareMap.get(DcMotor.class, "intakeRight");
 
-        intakeRight.setDirection(DcMotorSimple.Direction.REVERSE);
+        lift = hardwareMap.get(DcMotor.class, "lift");
+        clawRotator = hardwareMap.get(DcMotor.class, "clawRotator");
 
-        armExtenderLeft = hardwareMap.get(CRServo.class, "armExtenderLeft");
-        armExtenderRight = hardwareMap.get(CRServo.class, "armExtenderRight");
+        lift.setDirection(DcMotorSimple.Direction.REVERSE);
+        clawRotator.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        armExtenderLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+        claw = hardwareMap.get(Servo.class, "claw");
 
-        leftClaw = hardwareMap.get(Servo.class, "leftClaw");
-        rightClaw = hardwareMap.get(Servo.class, "rightClaw");
+        leftFoundationMover = hardwareMap.get(Servo.class, "leftFoundationMover");
+        rightFoundationMover = hardwareMap.get(Servo.class, "rightFoundationMover");
 
-        isClosed = false;
+        leftDistanceSensor = (Rev2mDistanceSensor)(hardwareMap.get(DistanceSensor.class, "leftDistanceSensor"));
+        rightDistanceSensor = (Rev2mDistanceSensor)(hardwareMap.get(DistanceSensor.class, "rightDistanceSensor"));
+        backDistanceSensor = (Rev2mDistanceSensor)(hardwareMap.get(DistanceSensor.class, "backDistanceSensor"));
 
-        lastClawtime = 0;
+        alliance = Alliance.UNKNOWN;
     }
 
     public void drive(double leftX, double leftY, double rightX) {
-        /*
-        flPower = + x + y + r
-        frPower = + x - y - r
-        blPower = + x - y + r
-        brPower = + x + y - r
-         */
-        frontLeft.setPower(-leftX + leftY - rightX);
-        backLeft.setPower(-leftX + leftY + rightX);
-        frontRight.setPower(leftX + leftY + rightX);
-        backRight.setPower(leftX + leftY - rightX);
+        double frontLeftPower = limitValue(-leftX + leftY - rightX);
+        double backLeftPower = limitValue(leftX + leftY - rightX);
+        double frontRightPower = limitValue(leftX + leftY + rightX);
+        double backRightPower = limitValue(-leftX + leftY + rightX);
+
+        frontLeft.setPower(frontLeftPower);
+        backLeft.setPower(backLeftPower);
+        frontRight.setPower(frontRightPower);
+        backRight.setPower(backRightPower);
     }
 
     public void intake(double power) {
+        power = limitValue(power);
+
+        power *= 0.75;
         intakeLeft.setPower(power);
         intakeRight.setPower(power);
     }
 
     public void lift(double power) {
+        power = limitValue(power);
+
+        power *= 0.7;
         lift.setPower(power);
     }
 
-    public void armExtender(double power) {
-        armExtenderLeft.setPower(power);
-        armExtenderRight.setPower(power);
+    public void rotateClaw(double power) {
+        power = 0.15 * limitValue(power);
+
+        clawRotator.setPower(power);
     }
 
-    public void toggleClaw(boolean isRequested, double runTime) {
-        //TODO: figure out positions
-        if(runTime - lastClawtime > DELAY) {
-            if (isRequested) {
-                if (isClosed) {
-                    leftClaw.setPosition(0.0);
-                    rightClaw.setPosition(0.0);
-                    isClosed = false;
-                    lastClawtime = runTime;
+    public void closeClaw() {
+        claw.setPosition(0.8);
+    }
 
-                } else {
-                    leftClaw.setPosition(0.25);
-                    rightClaw.setPosition(0.25);
-                    isClosed = true;
-                    lastClawtime = runTime;
-                }
-            }
-        }
+    public void openClaw() {
+        claw.setPosition(0);
+    }
+
+    public void dropFoundationMovers() {
+        leftFoundationMover.setPosition(0);
+        rightFoundationMover.setPosition(1);
+    }
+
+    public void raiseFoundationMovers() {
+        leftFoundationMover.setPosition(1);
+        rightFoundationMover.setPosition(0);
     }
 
     public void stop() {
@@ -114,12 +128,79 @@ public class Robot {
         frontRight.setPower(0);
         backRight.setPower(0);
 
-        lift.setPower(0);
-
         intakeLeft.setPower(0);
         intakeRight.setPower(0);
 
-        armExtenderLeft.setPower(0);
-        armExtenderRight.setPower(0);
+        lift.setPower(0);
+        clawRotator.setPower(0);
+    }
+
+    public double getLeftDistance() {
+        return leftDistanceSensor.getDistance(DistanceUnit.INCH);
+    }
+
+    public double getRightDistance() {
+        return rightDistanceSensor.getDistance(DistanceUnit.INCH);
+    }
+
+    public double getBackDistance() {
+        return backDistanceSensor.getDistance(DistanceUnit.INCH);
+    }
+
+    public boolean leftInRange() {
+        return (Math.abs(this.getLeftDistance() - leftGlyphDistance) < distanceTolerance);
+    }
+
+    public boolean rightInRange() {
+        return (Math.abs(this.getRightDistance() - rightGlyphDistance) < distanceTolerance);
+    }
+
+    public boolean backInRange() {
+        return (Math.abs(this.getBackDistance() - backGlyphDistance) < distanceTolerance);
+    }
+
+    public void setGlyphPosition() {
+        leftGlyphDistance = this.getLeftDistance();
+        rightGlyphDistance = this.getRightDistance();
+        backGlyphDistance = this.getBackDistance();
+    }
+
+    public boolean inRange() {
+        if(alliance == Alliance.RED)
+            return (this.leftInRange() && this.backInRange());
+        else if(alliance == Alliance.BLUE)
+            return (this.rightInRange() && this.backInRange());
+
+        return false;
+    }
+
+    public void driveToGlyphPosition() {
+        if(!this.inRange()) {
+            if(!backInRange()) {
+                if(this.getBackDistance() > backGlyphDistance) {
+                    this.drive(0.0, -0.5, 0.0);
+                } else if(this.getBackDistance() < backGlyphDistance) {
+                    this.drive(0.0, 0.5, 0.0);
+                }
+            } else if(alliance == Alliance.RED) {
+                if(!leftInRange()) {
+                    if(this.getLeftDistance() > leftGlyphDistance) {
+                        this.drive(-0.5, 0.0, 0.0);
+                    } else if(this.getLeftDistance() < leftGlyphDistance) {
+                        this.drive(0.5, 0.0, 0.0);
+                    }
+                }
+            } else if(alliance == Alliance.BLUE) {
+                if(!rightInRange()) {
+                    if(this.getRightDistance() > rightGlyphDistance) {
+                        this.drive(0.5, 0.0, 0.0);
+                    } else if(this.getRightDistance() < rightGlyphDistance) {
+                        this.drive(-0.5, 0.0, 0.0);
+                    }
+                }
+            }
+        } else {
+            this.drive(0.0, 0.0, 0.0);
+        }
     }
 }

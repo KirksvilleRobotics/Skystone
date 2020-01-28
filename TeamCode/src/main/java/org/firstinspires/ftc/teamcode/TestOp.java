@@ -7,7 +7,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 import caleb.server.BluetoothClient;
 
-@TeleOp(name="Test Tele-Op")
+//@TeleOp(name="Test Tele-Op")
 public class TestOp extends OpMode {
 
     //private BluetoothClient bluetoothClient;
