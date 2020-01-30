@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import clockworks.robot.Robot;
+import clockworks.util.Alliance;
 
 @TeleOp(name = "ClockworksTeleOP")
 public class ClockworksTeleOP extends OpMode {
@@ -12,7 +13,20 @@ public class ClockworksTeleOP extends OpMode {
     @Override
     public void init() {
         robot = new Robot(hardwareMap, telemetry,false);
+        robot.setAlliance(Alliance.UNKNOWN);
         drivingToGlyph = false;
+
+        boolean selectedAlliance = false;
+
+        while(!selectedAlliance) {
+            if(gamepad1.a) {
+                robot.setAlliance(Alliance.BLUE);
+                selectedAlliance = true;
+            } else if(gamepad1.b) {
+                robot.setAlliance(Alliance.RED);
+                selectedAlliance = true;
+            }
+        }
     }
 
     @Override
@@ -51,6 +65,12 @@ public class ClockworksTeleOP extends OpMode {
             robot.dropFoundationMovers();
         } else if(gamepad1.b) {
             robot.raiseFoundationMovers();
+        }
+
+        if(gamepad1.x) {
+            drivingToGlyph = true;
+        } else if(gamepad1.y) {
+            drivingToGlyph = false;
         }
     }
 }

@@ -298,4 +298,8 @@ public class Robot {
             this.drive(0.0, 0.0, 0.0);
         }
     }
+
+    public void setAlliance(Alliance alliance) {
+        this.alliance = alliance;
+    }
 }
