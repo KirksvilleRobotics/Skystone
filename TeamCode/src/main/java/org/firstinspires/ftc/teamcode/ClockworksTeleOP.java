@@ -5,6 +5,8 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import clockworks.robot.Robot;
 import clockworks.util.Alliance;
 
+//TODO add set-glyph position button
+
 @TeleOp(name = "ClockworksTeleOP")
 public class ClockworksTeleOP extends OpMode {
     private Robot robot;
@@ -13,7 +15,6 @@ public class ClockworksTeleOP extends OpMode {
     @Override
     public void init() {
         robot = new Robot(hardwareMap, telemetry,false);
-        robot.setAlliance(Alliance.UNKNOWN);
         drivingToGlyph = false;
 
         boolean selectedAlliance = false;
