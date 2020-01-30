@@ -17,27 +17,19 @@ public class BlueDepot extends LinearOpMode {
         resetStartTime();
 
         robot.encoderDrive(24, 24, 0.5);
-        sleep(500);
         robot.turn(-90);
-        sleep(500);
         robot.drive(44, 44, 0.5);
-        sleep(500);
         robot.turn(90);
-        sleep(500);
         robot.encoderDrive(8, 8, 0.5);
         robot.dropFoundationMovers();
         robot.encoderDrive(-36, -36, 0.5);
-        sleep(500);
+        //Change with drive right
         robot.turn(90);
-        sleep(500);
         robot.encoderDrive(18, 18, 0.5);
-        sleep(500);
         robot.turn(-90);
-        sleep(500);
+        //
         robot.encoderDrive(24, 24, 0.5);
-        sleep(500);
         robot.turn(90);
-        sleep(500);
         robot.encoderDrive(18, 18, 0.5);
         robot.stop();
     }
