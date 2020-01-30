@@ -15,7 +15,7 @@ public class ClockworksAutonomous extends LinearOpMode {
         waitForStart();
         resetStartTime();
 
-        robot.encoderDrive(24, 24, 0.5);
+        robot.turn(90);
         robot.stop();
     }
 }

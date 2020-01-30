@@ -53,7 +53,7 @@ public class Robot {
     private final double WHEEL_DIAMETER_INCHES = 3.9375;
     private final double COUNTS_PER_INCH = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) / (WHEEL_DIAMETER_INCHES * 3.1415);
 
-    private final double WHEEL_BASE_WIDTH = 12.0;
+    private final double WHEEL_BASE_WIDTH = 13.25;
     private final double WHEEL_BASE_LENGTH = 12.0;
 
     private Telemetry telemetry;
@@ -202,8 +202,11 @@ public class Robot {
     public void turn(double degrees) {
         degrees = findCoterminalAngle(degrees);
 
-        double leftDistance = 0.5 * Math.sqrt(WHEEL_BASE_WIDTH * WHEEL_BASE_WIDTH + WHEEL_BASE_LENGTH * WHEEL_BASE_LENGTH) * (degrees * (Math.PI / 180));
-        double rightDistance = -0.5 * Math.sqrt(WHEEL_BASE_WIDTH * WHEEL_BASE_WIDTH + WHEEL_BASE_LENGTH * WHEEL_BASE_LENGTH) * (degrees * (Math.PI / 180));
+        //double leftDistance = 0.5 * Math.sqrt(WHEEL_BASE_WIDTH * WHEEL_BASE_WIDTH + WHEEL_BASE_LENGTH * WHEEL_BASE_LENGTH) * (degrees * (Math.PI / 180));
+        //double rightDistance = -0.5 * Math.sqrt(WHEEL_BASE_WIDTH * WHEEL_BASE_WIDTH + WHEEL_BASE_LENGTH * WHEEL_BASE_LENGTH) * (degrees * (Math.PI / 180));
+
+        double leftDistance = -1 * WHEEL_BASE_WIDTH * Math.PI * 2 * (degrees/360.0);
+        double rightDistance = WHEEL_BASE_WIDTH * Math.PI * 2 * (degrees/360.0);
 
         encoderDrive(leftDistance, rightDistance, 0.5);
     }

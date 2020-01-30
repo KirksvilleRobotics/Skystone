@@ -16,18 +16,6 @@ public class ClockworksTeleOP extends OpMode {
     public void init() {
         robot = new Robot(hardwareMap, telemetry,false);
         drivingToGlyph = false;
-
-        boolean selectedAlliance = false;
-
-        while(!selectedAlliance) {
-            if(gamepad1.a) {
-                robot.setAlliance(Alliance.BLUE);
-                selectedAlliance = true;
-            } else if(gamepad1.b) {
-                robot.setAlliance(Alliance.RED);
-                selectedAlliance = true;
-            }
-        }
     }
 
     @Override
