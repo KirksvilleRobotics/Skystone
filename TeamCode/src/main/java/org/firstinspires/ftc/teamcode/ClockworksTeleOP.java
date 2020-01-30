@@ -11,7 +11,7 @@ public class ClockworksTeleOP extends OpMode {
 
     @Override
     public void init() {
-        robot = new Robot(hardwareMap);
+        robot = new Robot(hardwareMap, telemetry,false);
         drivingToGlyph = false;
     }
 
@@ -20,7 +20,7 @@ public class ClockworksTeleOP extends OpMode {
         if(drivingToGlyph) {
             robot.driveToGlyphPosition();
         } else {
-            robot.drive(gamepad1.left_stick_x, gamepad1.left_stick_y, gamepad1.right_stick_x);
+            robot.drive(-gamepad1.left_stick_x, -gamepad1.left_stick_y, gamepad1.right_stick_x);
         }
 
         robot.intake(gamepad1.right_trigger - gamepad1.left_trigger);

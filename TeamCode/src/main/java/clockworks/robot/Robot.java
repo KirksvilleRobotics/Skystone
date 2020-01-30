@@ -7,6 +7,7 @@ import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 import clockworks.util.Alliance;
@@ -37,11 +38,21 @@ public class Robot {
     private double leftGlyphDistance = 0.0;
     private double rightGlyphDistance = 0.0;
     private double backGlyphDistance = 0.0;
-    private double distanceTolerance = 0.5;
+    private final double DISTANCE_TOLERANCE = 0.5;
 
     private Alliance alliance;
 
-    public Robot(HardwareMap hardwareMap) {
+    private final int COUNTS_PER_MOTOR_REV = 1440;
+    private final double DRIVE_GEAR_REDUCTION = 1.0;
+    private final double WHEEL_DIAMETER_INCHES = 3.9375;
+    private final double COUNTS_PER_INCH = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) / (WHEEL_DIAMETER_INCHES * 3.1415);
+
+    private final double WHEEL_BASE_WIDTH = 12.0;
+    private final double WHEEL_BASE_LENGTH = 12.0;
+
+    private Telemetry telemetry;
+
+    public Robot(HardwareMap hardwareMap, Telemetry telemetry, boolean usingEncoders) {
         frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
         backLeft = hardwareMap.get(DcMotor.class, "backLeft");
         frontRight = hardwareMap.get(DcMotor.class, "frontRight");
@@ -49,6 +60,23 @@ public class Robot {
 
         frontRight.setDirection(DcMotorSimple.Direction.REVERSE);
         backRight.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        if(usingEncoders) {
+            frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+            frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        } else {
+            frontLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            backLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            frontRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            backRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        }
 
         intakeLeft = hardwareMap.get(DcMotor.class, "intakeLeft");
         intakeRight = hardwareMap.get(DcMotor.class, "intakeRight");
@@ -69,6 +97,8 @@ public class Robot {
         backDistanceSensor = (Rev2mDistanceSensor)(hardwareMap.get(DistanceSensor.class, "backDistanceSensor"));
 
         alliance = Alliance.UNKNOWN;
+
+        this.telemetry = telemetry;
     }
 
     public void drive(double leftX, double leftY, double rightX) {
@@ -81,6 +111,71 @@ public class Robot {
         backLeft.setPower(backLeftPower);
         frontRight.setPower(frontRightPower);
         backRight.setPower(backRightPower);
+    }
+
+    public void encoderDrive(double leftInches, double rightInches, double speed) {
+        leftInches = limitValue(leftInches, -144, 144);
+        rightInches = limitValue(rightInches, -144, 144);
+        speed = limitValue(speed);
+
+        int frontLeftTarget = frontLeft.getCurrentPosition() + (int)(leftInches * COUNTS_PER_INCH);
+        int backLeftTarget = backLeft.getCurrentPosition() + (int)(leftInches * COUNTS_PER_INCH);
+        int frontRightTarget = frontRight.getCurrentPosition() + (int)(rightInches * COUNTS_PER_INCH);
+        int backRightTarget = backRight.getCurrentPosition() + (int)(rightInches * COUNTS_PER_INCH);
+
+        frontLeft.setTargetPosition(frontLeftTarget);
+        backLeft.setTargetPosition(backLeftTarget);
+        frontRight.setTargetPosition(frontRightTarget);
+        backRight.setTargetPosition(backRightTarget);
+
+        frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        frontLeft.setPower(speed);
+        backLeft.setPower(speed);
+        frontRight.setPower(speed);
+        backRight.setPower(speed);
+
+        while(frontLeft.isBusy() && backLeft.isBusy() && frontRight.isBusy() && backRight.isBusy()) {
+            telemetry.addData("Left Target:", frontLeftTarget);
+            telemetry.addData("Left Current:", frontLeft.getCurrentPosition());
+
+            telemetry.addData("Right Target:", frontRightTarget);
+            telemetry.addData("Right Current:", frontRight.getCurrentPosition());
+
+            telemetry.addData("Front Left:", frontRight.isBusy());
+            telemetry.addData("Back Left:", backLeft.isBusy());
+            telemetry.addData("Front Right:", frontRight.isBusy());
+            telemetry.addData("Back Right:", backRight.isBusy());
+
+            telemetry.update();
+        }
+
+        frontLeft.setPower(0);
+        backLeft.setPower(0);
+        frontRight.setPower(0);
+        backRight.setPower(0);
+
+        frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+    }
+
+    public void turn(double degrees) {
+        degrees = findCoterminalAngle(degrees);
+
+        double leftDistance = 0.5 * Math.sqrt(WHEEL_BASE_WIDTH * WHEEL_BASE_WIDTH + WHEEL_BASE_LENGTH * WHEEL_BASE_LENGTH) * (degrees * (Math.PI / 180));
+        double rightDistance = -0.5 * Math.sqrt(WHEEL_BASE_WIDTH * WHEEL_BASE_WIDTH + WHEEL_BASE_LENGTH * WHEEL_BASE_LENGTH) * (degrees * (Math.PI / 180));
+
+        encoderDrive(leftDistance, rightDistance, 0.5);
     }
 
     public void intake(double power) {
@@ -148,15 +243,15 @@ public class Robot {
     }
 
     public boolean leftInRange() {
-        return (Math.abs(this.getLeftDistance() - leftGlyphDistance) < distanceTolerance);
+        return (Math.abs(this.getLeftDistance() - leftGlyphDistance) < DISTANCE_TOLERANCE);
     }
 
     public boolean rightInRange() {
-        return (Math.abs(this.getRightDistance() - rightGlyphDistance) < distanceTolerance);
+        return (Math.abs(this.getRightDistance() - rightGlyphDistance) < DISTANCE_TOLERANCE);
     }
 
     public boolean backInRange() {
-        return (Math.abs(this.getBackDistance() - backGlyphDistance) < distanceTolerance);
+        return (Math.abs(this.getBackDistance() - backGlyphDistance) < DISTANCE_TOLERANCE);
     }
 
     public void setGlyphPosition() {

@@ -21,5 +21,21 @@ public class InputUtils {
 
         return input;
     }
+
+    public static double findCoterminalAngle(double degrees) {
+        while(degrees >= 360) {
+            degrees -= 360;
+        }
+
+        while(degrees <= -360) {
+            degrees += 360;
+        }
+
+        return degrees;
+    }
+
+    private InputUtils() {
+
+    }
 }
 
