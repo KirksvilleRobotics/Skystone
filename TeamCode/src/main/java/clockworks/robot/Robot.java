@@ -44,17 +44,20 @@ public class Robot {
     private double rightGlyphDistance = 0.0;
     private double backGlyphDistance = 0.0;
     private final double DISTANCE_TOLERANCE = 0.5;
+    private double clawRotatorPower = 0.0;
 
     private Alliance alliance;
     private boolean usingEncoders;
 
-    private final int COUNTS_PER_MOTOR_REV = 1440;
-    private final double DRIVE_GEAR_REDUCTION = 1.0;
-    private final double WHEEL_DIAMETER_INCHES = 3.9375;
-    private final double COUNTS_PER_INCH = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) / (WHEEL_DIAMETER_INCHES * 3.1415);
+    private static final int COUNTS_PER_MOTOR_REV = 1440;
+    private static final double DRIVE_GEAR_REDUCTION = 1.0;
+    private static final double WHEEL_DIAMETER_INCHES = 3.9375;
+    private static final double COUNTS_PER_INCH = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) / (WHEEL_DIAMETER_INCHES * 3.1415);
 
     private final double WHEEL_BASE_WIDTH = 13.25;
     private final double WHEEL_BASE_LENGTH = 12.0;
+
+    private boolean gamePad2CanDrive = false;
 
     private Telemetry telemetry;
 
@@ -239,9 +242,20 @@ public class Robot {
      * @param power the power to rotate the claw at. Limited to [-1, 1]
      */
     public void rotateClaw(double power) {
-        power = 0.15 * limitValue(power);
+        power = 0.10 * limitValue(power);
+        int direction = 1;
+        if(power < 0) {
+            direction = -1;
+        }
+        power = Math.abs(power);
+        if(clawRotatorPower < power) {
+            clawRotatorPower += 0.02;
+        } else if(power == 0) {
+            clawRotatorPower -= 0.02;
+            if(clawRotatorPower < 0) clawRotatorPower = 0;
+        }
 
-        clawRotator.setPower(power);
+        clawRotator.setPower(clawRotatorPower * direction);
     }
 
     /**
@@ -391,6 +405,18 @@ public class Robot {
         } else {
             this.drive(0.0, 0.0, 0.0);
         }
+    }
+
+    /**
+     * toggles gamepad2's ability to drive slowly, meant for accurate movement when close to the
+     * landing area
+     */
+    public void toggleGamepad2Drive() {
+        gamePad2CanDrive = !gamePad2CanDrive;
+    }
+
+    public boolean gamepad2CanDrive() {
+        return gamePad2CanDrive;
     }
 
     /**
