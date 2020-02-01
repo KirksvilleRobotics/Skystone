@@ -11,6 +11,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 import clockworks.util.Alliance;
+import clockworks.util.Direction;
 
 import static clockworks.util.InputUtils.*;
 
@@ -100,6 +101,7 @@ public class Robot {
         clawRotator = hardwareMap.get(DcMotor.class, "clawRotator");
 
         lift.setDirection(DcMotorSimple.Direction.REVERSE);
+        lift.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         clawRotator.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         claw = hardwareMap.get(Servo.class, "claw");
@@ -134,43 +136,48 @@ public class Robot {
         backRight.setPower(backRightPower);
     }
 
+
     /**
-     * Controls tank drive with encoders. For autonomous.
-     * @param leftInches the distance the left wheels should travel. Limited to [-144, 144] inches
-     * @param rightInches the distance the right wheels should travel. Limited to [-144, 144] inches
-     * @param speed the speed at which the robot should be driven at. Limited to [0, 1]
+     * Main enncoder drive function for overloads
+     * all distances are limited from [-144, 144]
+     * @param leftFront left front wheel distance in inches
+     * @param leftBack left back wheel distance in inches
+     * @param rightFront right front wheel distance in inches
+     * @param rightBack right back wheel distance in inches
+     * @param speed motor speed from [0, 1]
      */
-    public void encoderDrive(double leftInches, double rightInches, double speed) {
+    public void encoderDrive(double leftFront, double leftBack, double rightFront, double rightBack, double speed) {
         if(usingEncoders) {
-            leftInches = limitValue(leftInches, -144, 144);
-            rightInches = limitValue(rightInches, -144, 144);
-            speed = limitValue(speed, 0, 1);
+            leftFront = limitValue(leftFront, -144, 144);
+            leftBack = limitValue(leftBack, -144, 144);
+            rightFront = limitValue(rightFront, -144, 144);
+            rightBack = limitValue(rightBack, -144, 144);
 
-            int frontLeftTarget = frontLeft.getCurrentPosition() + (int) (leftInches * COUNTS_PER_INCH);
-            int backLeftTarget = backLeft.getCurrentPosition() + (int) (leftInches * COUNTS_PER_INCH);
-            int frontRightTarget = frontRight.getCurrentPosition() + (int) (rightInches * COUNTS_PER_INCH);
-            int backRightTarget = backRight.getCurrentPosition() + (int) (rightInches * COUNTS_PER_INCH);
+            int leftFrontTarget = frontLeft.getCurrentPosition() + (int) (leftFront * COUNTS_PER_INCH);
+            int leftBackTarget = backLeft.getCurrentPosition() + (int) (leftBack * COUNTS_PER_INCH);
+            int rightFrontTarget = frontRight.getCurrentPosition() + (int) (rightFront * COUNTS_PER_INCH);
+            int rightBackTarget = backRight.getCurrentPosition() + (int) (rightBack * COUNTS_PER_INCH);
 
-            frontLeft.setTargetPosition(frontLeftTarget);
-            backLeft.setTargetPosition(backLeftTarget);
-            frontRight.setTargetPosition(frontRightTarget);
-            backRight.setTargetPosition(backRightTarget);
+            frontLeft.setTargetPosition(leftFrontTarget);
+            frontRight.setTargetPosition(rightFrontTarget);
+            backLeft.setTargetPosition(leftBackTarget);
+            backRight.setTargetPosition(rightBackTarget);
 
             frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
             frontLeft.setPower(speed);
-            backLeft.setPower(speed);
             frontRight.setPower(speed);
+            backLeft.setPower(speed);
             backRight.setPower(speed);
 
             while (frontLeft.isBusy() && backLeft.isBusy() && frontRight.isBusy() && backRight.isBusy()) {
-                telemetry.addData("Left Target:", frontLeftTarget);
+                telemetry.addData("Left Target:", leftFrontTarget);
                 telemetry.addData("Left Current:", frontLeft.getCurrentPosition());
 
-                telemetry.addData("Right Target:", frontRightTarget);
+                telemetry.addData("Right Target:", rightFrontTarget);
                 telemetry.addData("Right Current:", frontRight.getCurrentPosition());
 
                 telemetry.addData("Front Left:", frontRight.isBusy());
@@ -182,8 +189,8 @@ public class Robot {
             }
 
             frontLeft.setPower(0);
-            backLeft.setPower(0);
             frontRight.setPower(0);
+            backLeft.setPower(0);
             backRight.setPower(0);
 
             frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -195,6 +202,21 @@ public class Robot {
             backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        }
+    }
+
+    /**
+     * drives either forward / backward, or left / right
+     * @param inches distance needed to travel in inches
+     * @param direction enum specifying which direction to travel
+     * @param speed motor speed, limited from [0, 1]
+     */
+    public void encoderDrive(double inches, Direction direction, double speed) {
+        //TODO: figure out proportion of sideways travel distance
+        if(direction == Direction.STANDARD) {
+            encoderDrive(inches, inches, inches, inches, speed);
+        } else if(direction == Direction.SIDEWAYS) {
+            encoderDrive(-inches, inches, inches, -inches, speed);
         }
     }
 
@@ -211,7 +233,7 @@ public class Robot {
         double leftDistance = -1 * WHEEL_BASE_WIDTH * Math.PI * 2 * (degrees/360.0);
         double rightDistance = WHEEL_BASE_WIDTH * Math.PI * 2 * (degrees/360.0);
 
-        encoderDrive(leftDistance, rightDistance, 0.5);
+        encoderDrive(leftDistance, leftDistance, rightDistance, rightDistance, 0.5);
     }
 
     /**
@@ -232,8 +254,11 @@ public class Robot {
      */
     public void lift(double power) {
         power = limitValue(power);
-
-        power *= 0.7;
+        if(power < 0) {
+            power *= 0.4;
+        } else {
+            power *= 0.7;
+        }
         lift.setPower(power);
     }
 
@@ -273,17 +298,17 @@ public class Robot {
     }
 
     /**
-     * Lowers the foundation movers
+     * Raises the foundation movers
      */
-    public void dropFoundationMovers() {
+    public void raiseFoundationMovers() {
         leftFoundationMover.setPosition(0);
         rightFoundationMover.setPosition(1);
     }
 
     /**
-     * Raises the foundation movers
+     * Drops the foundation movers
      */
-    public void raiseFoundationMovers() {
+    public void dropFoundationMovers() {
         leftFoundationMover.setPosition(1);
         rightFoundationMover.setPosition(0);
     }

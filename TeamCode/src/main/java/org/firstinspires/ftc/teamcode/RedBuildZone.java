@@ -5,28 +5,34 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import clockworks.robot.Robot;
 import clockworks.util.Alliance;
+import clockworks.util.Direction;
 
 @Autonomous(name = "Red Build Zone")
 public class RedBuildZone extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         Robot robot = new Robot(hardwareMap, telemetry, true);
-        robot.setAlliance(Alliance.RED);
+        robot.setAlliance(Alliance.BLUE);
 
         waitForStart();
         resetStartTime();
 
-        robot.encoderDrive(36, 36, 0.5);
+        robot.encoderDrive(30, Direction.STANDARD, 0.5);
+        sleep(500);
         robot.dropFoundationMovers();
-        robot.encoderDrive(-36, -36, 0.5);
+        sleep(800);
+        robot.encoderDrive(-32, Direction.STANDARD, 0.5);
+        sleep(500);
         robot.raiseFoundationMovers();
-        //Change to drive Left
-        robot.turn(-90);
-        robot.encoderDrive(18, 18, 0.5);
-        robot.turn(90);
+        sleep(500);
+        // Change to drive right
+        robot.encoderDrive(30, Direction.SIDEWAYS, 0.5);
+        sleep(500);
         //
-        robot.encoderDrive(24, 24, 0.5);
-        robot.turn(-90);
-        robot.encoderDrive(18, 18, 0.5);
+        robot.encoderDrive(24, Direction.STANDARD, 0.5);
+        sleep(500);
+        robot.turn(90);
+        robot.encoderDrive(-18, Direction.STANDARD, 0.5);
+        robot.stop();
     }
 }

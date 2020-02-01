@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import clockworks.robot.Robot;
 import clockworks.util.Alliance;
+import clockworks.util.Direction;
 
 @Autonomous(name = "Blue Depot")
 public class BlueDepot extends LinearOpMode {
@@ -16,21 +17,31 @@ public class BlueDepot extends LinearOpMode {
         waitForStart();
         resetStartTime();
 
-        robot.encoderDrive(24, 24, 0.5);
+        robot.encoderDrive(16, Direction.STANDARD, 0.5);
+        sleep(300);
         robot.turn(-90);
-        robot.drive(44, 44, 0.5);
+        sleep(300);
+        robot.encoderDrive(70, Direction.STANDARD, 0.5);
+        sleep(300);
         robot.turn(90);
-        robot.encoderDrive(8, 8, 0.5);
+        sleep(300);
+        robot.encoderDrive(10, Direction.STANDARD, 0.5);
+        sleep(300);
         robot.dropFoundationMovers();
-        robot.encoderDrive(-36, -36, 0.5);
+        sleep(600);
+        robot.encoderDrive(-30, Direction.STANDARD, 0.5);
+        sleep(300);
+        robot.raiseFoundationMovers();
+        sleep(600);
         //Change with drive right
-        robot.turn(90);
-        robot.encoderDrive(18, 18, 0.5);
-        robot.turn(-90);
+        robot.encoderDrive(-30, Direction.SIDEWAYS, 0.5);
+        sleep(300);
         //
-        robot.encoderDrive(24, 24, 0.5);
-        robot.turn(90);
-        robot.encoderDrive(18, 18, 0.5);
+        robot.encoderDrive(22, Direction.STANDARD, 0.5);
+        sleep(300);
+        robot.turn(-90);
+        sleep(300);
+        robot.encoderDrive(-18, Direction.STANDARD, 0.5);
         robot.stop();
     }
 }
